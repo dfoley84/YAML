@@ -1,0 +1,51 @@
+formatVersion: 1 
+inputs: 
+  hostname:
+    type: string
+  user:
+    type: string
+    default: devuser
+  password:
+    type: string
+    pattern: '[a-z0-9A-Z@#$]+'
+    encrypted: true
+    title: Account Password
+resources:
+  vSphere-VM:
+    type: Cloud.vSphere.Machine
+    metadata:
+      layouyPosition:
+        - 0 
+        - 0
+    properties:
+      image: 'LinuxMint'
+      flavor: medium
+      cloudConfig:
+        hostname: '${input.hostname}'
+        users:
+          - name: '${input.user}'
+            sudo:
+              - 'ALL=(ALL) NOPASSWD:ALL'
+            groups: sudo
+            shell: /bin/bash
+        runcmd:
+          - 'PASS=${input.password}'
+          - 'USER=${input.user}'
+          - 'echo $USER:$PASS | /usr/sbin/chpasswd'
+          - sed -i "s/PasswordAuthentication no /PasswordAuthentication yes/g /etc/ssh/sshd_config"
+          - service ssh reload
+      networks:
+        - network: '${resources.Cloud_vSphere_Network_1.id}'
+          assigment: static
+      attachedDisks:
+        - source: '${resource.Cloud_vSphere_Disk_1.id}'
+  Cloud_vSphere_Network_1:
+    type: Cloud.vSphere.Network
+    metadata:
+      layouyPosition:
+        - 0 
+        - 0
+    properties:
+      networkType: existing
+      name: Dev
+      networkCidr: 172.10.1.0/24
