@@ -1,0 +1,33 @@
+formatVersion: 1 
+inputs: 
+  SelectDisks:
+    type: string
+    enum:
+      - One-Disk
+      - Two-Disks
+resources:
+  Cloud_vSphere_Disk_1:
+    type: Cloud.vSphere.Disk
+    properties:
+      storagePolicy: Tier1
+      count '${input.SelectDisk == "One-Disk" ? 0: 1}'
+      capacityGB: 40
+  vSphere-VM:
+    type: Cloud.vSphere.Machine
+    properties:
+      storage:
+        constraints:
+          - tag: '${input.SelectDisks == "Two-Disks" ? "Tier1" : "Tier2"}'
+      image: 'LinuxMint'
+      cpuCount: 1
+      totalMemoryMB: 2048
+      networks:
+        - network: '${resources.Cloud_vSphere_Network_1.id}'
+      attachedDisks:
+        - source: '${resource.Cloud_vSphere_Disk_1.id}'
+  Cloud_vSphere_Network_1:
+    type: Cloud.vSphere.Network
+    properties:
+      networkType: existing
+      name: Dev
+      networkCidr: 172.10.1.0/24
